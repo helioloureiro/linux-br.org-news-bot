@@ -72,7 +72,6 @@ class NewsBot:
         cfg = configparser.ConfigParser()
         cfg.read(self.configFile)
         self.joomla = {
-            'username' : cfg.get('JOOMLA', 'USER'),
             'token' : cfg.get('JOOMLA', 'TOKEN'),
             'site' : cfg.get('JOOMLA', 'SITE')
         }
