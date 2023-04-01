@@ -8,15 +8,10 @@ from nltk.tokenize import sent_tokenize
 from nltk.corpus import stopwords
 from nltk.probability import FreqDist
 from heapq import nlargest
-import nltk
 import tempfile
 import json
 from googletrans import Translator
 import dbm
-
-
-nltk.download('punkt')
-nltk.download('stopwords')
 
 HACKERNEWS_FEED = "https://hnrss.org/newest"
 
@@ -60,7 +55,17 @@ def getArticles(news_list : list) -> list:
         for element in soup.select("article p"):
             article_text += "\n" + element.text
 
-        sentences = sent_tokenize(article_text)
+        try:
+            sentences = sent_tokenize(article_text)
+        except LookupError:
+            print("initializing nltk")
+            import nltk
+            nltk.download('punkt')
+            nltk.download('stopwords')
+         
+            # trying again
+            sentences = sent_tokenize(article_text)
+
         stop_words = set(stopwords.words("english"))
         word_frequencies = FreqDist()
         for word in nltk.word_tokenize(article_text):
