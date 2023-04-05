@@ -71,9 +71,10 @@ class NewsBot:
         import configparser
         cfg = configparser.ConfigParser()
         cfg.read(self.configFile)
-        self.joomla = {
-            'token' : cfg.get('JOOMLA', 'TOKEN'),
-            'site' : cfg.get('JOOMLA', 'SITE')
+        self.wordpress = {
+            'site' : cfg.get('WORDPRESS', 'SITE')
+            'username' : cfg.get('WORDPRESS', 'USERNAME'),
+            'password' : cfg.get('WORDPRESS', 'PASSWORD'),
         }
         self.dbm = cfg.get('GENERAL', 'DBFILE')
 
@@ -196,50 +197,54 @@ class NewsBot:
         line = re.sub("ç", "c", line)
         return line
 
-    def publishJoomla(self):
-        token = self.joomla['token']
-        headers = {'Authorization': f'Bearer {token}'}
-        for art in self.articles:
-            # https: // docs.joomla.org/J4.x: Joomla_Core_APIs
-            data = {
-                "alias": self.generateAlias(art['title']),
-                "articletext": art['summary'],
-                "catid": 9,  # 9 is blogs for us - we shouldn't hard code here
-                "category" : "Blog",
-                "language": "*",
-                "metadesc": "",
-                "metakey": "",
-                "title": art['title']
-            }
+    def publishWordPress(self):
+        from wordpress_xmlrpc import Client, WordPressPost
+        from wordpress_xmlrpc.methods import posts, media
+        from wordpress_xmlrpc.compat import xmlrpc_client
 
+        url = self.wordpress['site']
+        username = self.wordpress['username']
+        password = self.wordpress['password']
+
+        client = Client(url, username, password)
+
+        for art in self.articles:
+            # start by image - if fail, just move on to next
             try:
                 image_file = getImage(art['image'])
             except requests.exceptions.MissingSchema:
                 continue
-            image_name = os.path.basename(art['image'])
-            with open(image_file, "rb") as f:
-                image_data = base64.b64encode(f.read()).decode("utf-8")
 
-            data["images"] = {
-                "image_intro": image_name,
-                "image_fulltext": "",
-                "image_fulltext_alt": "",
-                "image_fulltext_caption": ""
-            }
-            data["images"][image_name] = {
-                "type": "image/" + getImageExtension(image_name),
-                "title": "Image title",
-                "base64": image_data
-            }
+            image_filename = os.path.basename(art['image'])
 
-            response = requests.post(
-                self.joomla['site'] + '/v1/content/articles', 
-                headers=headers, 
-                data={"json": json.dumps(data)})
-            print('status code:', response.status_code)
-            print('response:', response.text)
-            return
-            
+            data = {
+                #"alias": self.generateAlias(art['title']),
+                #"articletext": art['summary'],
+                #"catid": 9,  # 9 is blogs for us - we shouldn't hard code here
+                #"category" : "Blog",
+                #"language": "*",
+                #"metadesc": "",
+                #"metakey": "",
+                #"title": art['title']
+                "name": image_filename,
+                "type": "image/jpeg",
+                "bits": xmlrpc_client.Binary(image_file),
+                "overwrite": True
+            }
+            response = client.call(media.UploadFile(data))
+            attachment_id = None
+            if response:
+                attachment_id = response["id"]
+
+            post = WordPressPost()
+            post.title = art['title']
+            post.content = art['summary']
+            post.post_status = "publish"
+            if attachment_id is not None:
+                post.thumbnail = attachment_id
+            post_id = client.call(posts.NewPost(post))
+            print('Posted:', art['title']
+
 
     def run(self):
         self.getHackerNews()
@@ -248,7 +253,7 @@ class NewsBot:
         self.articles = self.getArticles()
         prettyprint(self.articles)
 
-        self.publishJoomla()
+        self.publishWordPress()
 
 
 if __name__ == '__main__':
