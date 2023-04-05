@@ -72,9 +72,9 @@ class NewsBot:
         cfg = configparser.ConfigParser()
         cfg.read(self.configFile)
         self.wordpress = {
-            'site' : cfg.get('WORDPRESS', 'SITE')
+            'site' : cfg.get('WORDPRESS', 'SITE'),
             'username' : cfg.get('WORDPRESS', 'USERNAME'),
-            'password' : cfg.get('WORDPRESS', 'PASSWORD'),
+            'password' : cfg.get('WORDPRESS', 'PASSWORD')
         }
         self.dbm = cfg.get('GENERAL', 'DBFILE')
 
@@ -243,7 +243,7 @@ class NewsBot:
             if attachment_id is not None:
                 post.thumbnail = attachment_id
             post_id = client.call(posts.NewPost(post))
-            print('Posted:', art['title']
+            print('Posted:', art['title'])
 
 
     def run(self):
