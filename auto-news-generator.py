@@ -74,7 +74,8 @@ class NewsBot:
         self.wordpress = {
             'site' : cfg.get('WORDPRESS', 'SITE'),
             'username' : cfg.get('WORDPRESS', 'USERNAME'),
-            'password' : cfg.get('WORDPRESS', 'PASSWORD')
+            'password' : cfg.get('WORDPRESS', 'PASSWORD'),
+            'token' : cfg.get('WORDPRESS', 'TOKEN')
         }
         self.dbm = cfg.get('GENERAL', 'DBFILE')
 
@@ -115,7 +116,10 @@ class NewsBot:
         '''
         articles = list()
         for n in self.articles:
-            html_content = getHtmlContent(n['link'])
+            try:
+                html_content = getHtmlContent(n['link'])
+            except:
+                continue
             soup = BeautifulSoup(html_content, "html.parser")
 
             article_text = ""
@@ -176,10 +180,12 @@ class NewsBot:
             translated_title = translator.translate(
                 n['title'], src='en', dest='pt')
 
+            content = translated_summary.text 
+            content += "\nFonte: " + n['link']
  
             articles.append({
                 'title': translated_title.text,
-                'summary': translated_summary.text,
+                'content': content,
                 'link': n['link'],
                 'id': n['id'],
                 'image': img_url
@@ -198,52 +204,44 @@ class NewsBot:
         return line
 
     def publishWordPress(self):
-        from wordpress_xmlrpc import Client, WordPressPost
-        from wordpress_xmlrpc.methods import posts, media
-        from wordpress_xmlrpc.compat import xmlrpc_client
+
+        # reference: https://github.com/crifan/crifanLibPython/blob/master/python3/crifanLib/thirdParty/crifanWordpress.py
 
         url = self.wordpress['site']
-        username = self.wordpress['username']
-        password = self.wordpress['password']
+        token = self.wordpress['token']
 
-        client = Client(url, username, password)
+        curHeaders = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        }
 
         for art in self.articles:
-            # start by image - if fail, just move on to next
-            try:
-                image_file = getImage(art['image'])
-            except requests.exceptions.MissingSchema:
-                continue
-
-            image_filename = os.path.basename(art['image'])
-
+            import time
+            timestamp = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime(time.time() - 3 * 60 * 60))
             data = {
-                #"alias": self.generateAlias(art['title']),
-                #"articletext": art['summary'],
-                #"catid": 9,  # 9 is blogs for us - we shouldn't hard code here
-                #"category" : "Blog",
-                #"language": "*",
-                #"metadesc": "",
-                #"metakey": "",
-                #"title": art['title']
-                "name": image_filename,
-                "type": "image/jpeg",
-                "bits": xmlrpc_client.Binary(image_file),
-                "overwrite": True
+                "title": art['title'],
+                "content": art['content'],
+                # "date_gmt": dateStr,
+                "date": timestamp, # '2020-08-17T10:16:34'
+                "slug": self.generateAlias(art['title']),
+                "status": "publish",
+                "format": 'standard',
+                "categories": [9],
+                "tags": [],
             }
-            response = client.call(media.UploadFile(data))
-            attachment_id = None
-            if response:
-                attachment_id = response["id"]
-
-            post = WordPressPost()
-            post.title = art['title']
-            post.content = art['summary']
-            post.post_status = "publish"
-            if attachment_id is not None:
-                post.thumbnail = attachment_id
-            post_id = client.call(posts.NewPost(post))
-            print('Posted:', art['title'])
+            resp = requests.post(
+                f"{url}/wp-json/wp/v2/posts",
+                headers=curHeaders,
+                # data=json.dumps(postDict),
+                json=data, # internal auto do json.dumps
+            )
+            if resp.status_code == 200 or resp.status_code == 201:
+                print('Posted:', art['title'])
+            else:
+                print('FAILED:', art['title'])
+            print(' * status code:', resp.status_code)
+            print(' * resp text:', resp.text)
 
 
     def run(self):
