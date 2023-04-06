@@ -173,7 +173,8 @@ class NewsBot:
                 n['title'], src='en', dest='pt')
 
             content = translated_summary.text 
-            content += "\n\nFonte: " + n['link']
+            content += "\n\nFonte: <a href=\"" + n['link']
+            content += "\">" + n['link'] + "</a>"
  
             articles.append({
                 'title': translated_title.text,
