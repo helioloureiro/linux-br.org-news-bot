@@ -12,7 +12,6 @@ from heapq import nlargest
 import tempfile
 import json
 from googletrans import Translator
-import dbm
 import os
 import base64
 
@@ -76,25 +75,8 @@ class NewsBot:
         cfg.read(self.configFile)
         self.wordpress = {
             'site' : cfg.get('WORDPRESS', 'SITE'),
-            'username' : cfg.get('WORDPRESS', 'USERNAME'),
-            'password' : cfg.get('WORDPRESS', 'PASSWORD'),
             'token' : cfg.get('WORDPRESS', 'TOKEN')
         }
-        self.dbm = cfg.get('GENERAL', 'DBFILE')
-
-    def readDB(self):
-        with dbm.open(self.dbm, 'c') as d:
-            try:
-                self.published_articles = d['published']
-            except KeyError:
-                self.published_articles = []
-
-    def writeDB(self):
-        with dbm.open(self.dbm, 'c') as d:
-            if len(self.published_articles) > 30:
-                d['published'] = self.published_articles[-30:]
-            else:
-                d['published'] = self.published_articles
 
     def getHackerNews(self) -> list:
         '''
