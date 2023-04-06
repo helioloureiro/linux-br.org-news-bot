@@ -67,7 +67,6 @@ class NewsBot:
 
         self.articles = []
         self.readConfiguration()
-        self.readDB()
 
     def readConfiguration(self):
         import configparser
