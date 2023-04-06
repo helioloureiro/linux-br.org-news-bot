@@ -33,9 +33,12 @@ def getImageExtension(image_line: str) -> str:
     return image.split('.')[-1]
 
 def getImage(link : str) -> str:
+    print('getimage() link:', link)
     response = requests.get(link)
+    extension = getImageExtension(link)
+    print('getimage() suffix:', extension)
 
-    image_file = tempfile.mkstemp(prefix=getImageExtension(link))
+    image_file = tempfile.mkstemp(suffix='.' + extension)
     with open(image_file[1], "wb") as f:
         f.write(response.content)
     return image_file[1]
@@ -109,6 +112,13 @@ class NewsBot:
                 'id' : hash_id
             })
 
+    def getSiteRSSTitles(self) -> list:
+        fp = feedparser.parse(self.wordpress['site'] + '/feed/')
+        titles = list()
+        for e in fp['entries']:
+            titles.append(e['title'])
+        return titles
+
     def getArticles(self) -> list:
         '''
         Open each news from the list, fetch the data and try to generate a summary.
@@ -168,12 +178,12 @@ class NewsBot:
                 except KeyError:
                     pass
 
-            if img_url is None:
-                # no image found, so skip to the next
-                continue
-
             print('translating:', n['title'])
-            translated_summary = translator.translate(summary, src='en', dest='pt')
+            try:
+                translated_summary = translator.translate(summary, src='en', dest='pt')
+            except TypeError:
+                # failed to translate, try the next one
+                continue
             if len(translated_summary.text) < 5:
                 print(' * failed...')
                 continue
@@ -181,7 +191,7 @@ class NewsBot:
                 n['title'], src='en', dest='pt')
 
             content = translated_summary.text 
-            content += "\nFonte: " + n['link']
+            content += "\n\nFonte: " + n['link']
  
             articles.append({
                 'title': translated_title.text,
@@ -216,20 +226,57 @@ class NewsBot:
             "Accept": "application/json",
         }
 
+        published_titles = self.getSiteRSSTitles()
+
         for art in self.articles:
-            import time
-            timestamp = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime(time.time() - 3 * 60 * 60))
+
+            if art['title'] in published_titles:
+                # skip if already there
+                print('Article "' + art['title'] + '" already published')
+                continue
             data = {
                 "title": art['title'],
                 "content": art['content'],
-                # "date_gmt": dateStr,
-                "date": timestamp, # '2020-08-17T10:16:34'
+                "date": None, # '2020-08-17T10:16:34'
                 "slug": self.generateAlias(art['title']),
                 "status": "publish",
                 "format": 'standard',
-                "categories": [9],
+                "categories": [91], # 91 : notícias
                 "tags": [],
             }
+
+            if art['image'] is not None:
+                import re
+                if not re.search('^http', art['image']):
+                    link = art['link']
+                    if link[-1]  == '/':
+                        link = link[:-1]
+                    art['image'] = '/'.join([ link, art['image'] ])
+                print('image:', art['image'])
+                image_path = getImage(art['image'])
+                print('image_path:', image_path)
+                with open(image_path, "rb") as f:
+                    image_data = f.read()
+                image_type = getImageExtension(image_path)
+                image_filename = os.path.basename(image_path)
+
+                print('image_filename:', image_filename)
+                print('image_type:', image_type)
+
+                media_headers = {
+                    "Authorization": "Bearer " + token,
+                    "Content-Disposition": "attachment; filename={}".format(image_filename),
+                    "Cache-control" : "no-cache",
+                    "Content-type" : "image/" + image_type
+                }
+
+                media_response = requests.post(url + "/wp-json/wp/v2/media", headers=media_headers, data=image_data)
+
+                print('media_response:', media_response.text)
+                if media_response.status_code == 200 or media_response.status_code == 201:
+                    media_id = media_response.json()["id"]
+                    data["featured_media"] = media_id
+
             resp = requests.post(
                 f"{url}/wp-json/wp/v2/posts",
                 headers=curHeaders,
