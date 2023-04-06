@@ -101,7 +101,7 @@ if __name__ == '__main__':
         print("ERROR: toot not configured yet.  Use toot to create your configuration.")
         sys.exit(os.EX_CONFIG)
 
-    if not os.path.exists(args.sqlite3):
+    if args.sqlite3 is None or not os.path.exists(args.sqlite3):
         print("ERROR: missing sqlite3 database")
         sys.exit(os.EX_CONFIG)
 
