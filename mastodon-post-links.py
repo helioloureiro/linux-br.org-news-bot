@@ -42,7 +42,6 @@ class TootPostLink:
         print('Mastodon login completed')
 
         self.database = database
-
         self.getDataDB()
 
     def getArticles(self):
@@ -50,10 +49,11 @@ class TootPostLink:
         articles = feedparser.parse(RSS_SITE)
         self.articles = []
         print('selecting articles...')
+        print('posted_articles:', self.posted_articles)
         for rss in articles.entries:
             #rss = articles.entries[index]
-            if rss.title in self.posted_articles:
-                # skip and move to the next
+            if rss.link in self.posted_articles:
+                print(f'Article "{rss.title}" is already posted')
                 continue
             print('title:', rss.title)
             print(' * link:', rss.link)
