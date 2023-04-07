@@ -278,7 +278,6 @@ class NewsBot:
                 'title': translated_title.text,
                 'content': content,
                 'link': n['link'],
-                'id': n['id'],
                 'image': img_url
             })
         return articles
