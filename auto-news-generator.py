@@ -185,7 +185,7 @@ class NewsBot:
             titles.append(e['title'])
         return titles
 
-    def isTopicOfInterest(text : str) -> bool:
+    def isTopicOfInterest(self, text : str) -> bool:
         score = 0
         for word in INTERESTED_TERMS:
             if re.search(word.lower(), text.lower()):
