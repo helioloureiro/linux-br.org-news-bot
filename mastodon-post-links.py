@@ -85,6 +85,18 @@ class TootPostLink:
             cur = con.cursor()
             for item in cur.execute("SELECT * from posted_articles").fetchall():
                 self.posted_articles.append(item[0])
+        # detect duplicates and fix
+        single_articles = sorted(set(self.posted_articles))
+        if len(self.posted_articles) > len(single_articles):
+            print("Duplicated entries into database deteced - fixing")
+            with sqlite3.connect(self.database) as con:
+                cur = con.cursor()
+                cur.execute("DELETE FROM posted_articles")
+                con.commit()
+            self.posted_articles = single_articles
+            self.saveDataDB()
+            print("Database fixed from duplicates")
+            
 
 
 if __name__ == '__main__':
