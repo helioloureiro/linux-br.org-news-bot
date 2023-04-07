@@ -1,7 +1,6 @@
 #! /usr/bin/env python3
 
 import feedparser
-import hashlib
 import requests
 from bs4 import BeautifulSoup
 from nltk.tokenize import sent_tokenize
@@ -14,13 +13,103 @@ import json
 from googletrans import Translator
 import os
 import base64
+import re
 
 HACKERNEWS_FEED = "https://hnrss.org/newest"
 
 translator = Translator(service_urls=['translate.google.com'])
 
-def hashData(line : str) -> str:
-    return hashlib.sha256(line.encode('utf-8')).hexdigest()
+INTERESTED_TERMS = [ 
+    "MySQL",
+    "Oracle",
+    "Database",
+    "PostgreSQL",
+    "Linux",
+    "MacOS",
+    "FreeBSD",
+    "OpenBSD",
+    "NetBSD",
+    "Debian",
+    "Archlinux",
+    "Fedora",
+    "ChatGPT",
+    "sendmail",
+    "postfix",
+    "Mastodon",
+    "Twitter",
+    "Python",
+    "Golang",
+    "Java",
+    "Shell",
+    "Perl",
+    "TCL",
+    "Ruby",
+    "nodejs",
+    "npm",
+    "pip",
+    "PSF",
+    "FSF",
+    "OSI",
+    "free software",
+    "software libre",
+    "open source",
+    "arduino",
+    "GitHub",
+    "GitLab",
+    "raspberrypi",
+    "NVIDIA",
+    "ATX",
+    "BSD",
+    "kubernetes",
+    "k8s",
+    "malware",
+    "privacy",
+    "PGP",
+    "GPG",
+    "OpenSSL",
+    "curl",
+    "Solaris",
+    "Sun",
+    "Debian",
+    "Joomla",
+    "WordPress",
+    "Mint",
+    "Ubuntu",
+    "Vulkan",
+    "Wine",
+    "KDE",
+    "Plasma",
+    "Kirigami",
+    "GTK",
+    "Gnome",
+    "Xorg",
+    "Wayland",
+    "javascript",
+    "react",
+    "android",
+    "iphone",
+    "macbook",
+    "signal",
+    "amazon",
+    "facebook",
+    "google",
+    "bitcoin",
+    "crypto",
+    "co-pilot",
+    "CUDA",
+    "microservices",
+    "helm",
+    "kubectl",
+    "GC",
+    "Garbage Collector",
+    "llama",
+    "pyscript",
+    "WebAssembly",
+    "JSON",
+    "JWT",
+    "API"]
+
+
 
 def getHtmlContent(link : str) -> str:
     response = requests.get(link)
@@ -84,13 +173,9 @@ class NewsBot:
         fp = feedparser.parse(HACKERNEWS_FEED)
 
         for e in fp['entries']:
-            hash_id = hashData(e['id'])
-            if hash_id in self.published_articles:
-                continue
             self.articles.append({
                 'title' : e['title'],
                 'link' : e['link'],
-                'id' : hash_id
             })
 
     def getSiteRSSTitles(self) -> list:
@@ -99,6 +184,16 @@ class NewsBot:
         for e in fp['entries']:
             titles.append(e['title'])
         return titles
+
+    def isTopicOfInterest(text : str) -> bool:
+        score = 0
+        for word in INTERESTED_TERMS:
+            if re.search(word.lower(), text.lower()):
+                score += 1
+        print('Score:', score)
+        if score == 0:
+            return False
+        return True
 
     def getArticles(self) -> list:
         '''
@@ -116,6 +211,10 @@ class NewsBot:
             article_text = ""
             for element in soup.select("article p"):
                 article_text += "\n" + element.text
+
+            if not self.isTopicOfInterest(article_text):
+                print('Not related to something we might like - skipping')
+                continue
 
             try:
                 sentences = sent_tokenize(article_text)
