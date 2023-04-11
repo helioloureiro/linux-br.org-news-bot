@@ -14,6 +14,7 @@ from googletrans import Translator
 import os
 import base64
 import re
+import time
 
 HACKERNEWS_FEED = "https://hnrss.org/newest"
 
@@ -153,8 +154,6 @@ INTERESTED_TERMS = [
     "limactl"
     ]
 
-
-
 def getHtmlContent(link : str) -> str:
     response = requests.get(link)
     html_content = response.text
@@ -246,7 +245,7 @@ class NewsBot:
         '''
         articles = list()
         for n in self.articles:
-            if not self.isTopicOfInterest(n['title']:
+            if not self.isTopicOfInterest(n['title']):
                 print('Not related to something we might like, so we skip:', n['title'])
                 continue
             try:
@@ -399,6 +398,8 @@ class NewsBot:
                 if media_response.status_code == 200 or media_response.status_code == 201:
                     media_id = media_response.json()["id"]
                     data["featured_media"] = media_id
+                print('removing image:", image_path)
+                os.unlink(image_path)
 
             resp = requests.post(
                 f"{url}/wp-json/wp/v2/posts",
@@ -425,5 +426,6 @@ class NewsBot:
 
 
 if __name__ == '__main__':
+    print(time.ctime())
     news = NewsBot()
     news.run()
