@@ -246,6 +246,9 @@ class NewsBot:
         '''
         articles = list()
         for n in self.articles:
+            if not self.isTopicOfInterest(n['title']:
+                print('Not related to something we might like, so we skip:', n['title'])
+                continue
             try:
                 html_content = getHtmlContent(n['link'])
             except:
@@ -255,10 +258,6 @@ class NewsBot:
             article_text = ""
             for element in soup.select("article p"):
                 article_text += "\n" + element.text
-
-            if not self.isTopicOfInterest(article_text):
-                print('Not related to something we might like - skipping')
-                continue
 
             try:
                 sentences = sent_tokenize(article_text)
