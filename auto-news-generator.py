@@ -398,7 +398,7 @@ class NewsBot:
                 if media_response.status_code == 200 or media_response.status_code == 201:
                     media_id = media_response.json()["id"]
                     data["featured_media"] = media_id
-                print('removing image:", image_path)
+                print('removing image:', image_path)
                 os.unlink(image_path)
 
             resp = requests.post(
