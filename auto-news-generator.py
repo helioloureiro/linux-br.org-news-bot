@@ -442,7 +442,7 @@ class NewsBot:
 
     def run(self):
         self.getHackerNews()
-        prettyprint(self.articles)
+        #prettyprint(self.articles)
 
         self.articles = self.getArticles()
         #prettyprint(self.articles)
