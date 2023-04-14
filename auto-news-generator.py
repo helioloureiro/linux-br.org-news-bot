@@ -418,7 +418,7 @@ class NewsBot:
             else:
                 print('FAILED:', art['title'])
             print(' * status code:', resp.status_code)
-            print(' * resp text:', resp.text)
+            #print(' * resp text:', resp.text)
 
 
     def run(self):
