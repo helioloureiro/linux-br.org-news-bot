@@ -153,7 +153,11 @@ INTERESTED_TERMS = [
     "podman",
     "rancher",
     "nerdctl",
-    "limactl"
+    "limactl",
+    "CSS",
+    "supervisioned learning",
+    "HTML",
+    "CLI"
     ]
 
 logging.basicConfig()
@@ -249,7 +253,7 @@ class NewsBot:
         for word in INTERESTED_TERMS:
             if re.search(word.lower(), text.lower()):
                 score += 1
-        logger.debug('Score: ' + str(score))
+        logger.debug(f'"{text}" [SCORE: {score}]')
         if score == 0:
             return False
         return True
