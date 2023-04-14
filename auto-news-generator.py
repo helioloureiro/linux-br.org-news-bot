@@ -15,6 +15,7 @@ import os
 import base64
 import re
 import time
+import mimetypes
 
 HACKERNEWS_FEED = "https://hnrss.org/newest"
 
@@ -160,14 +161,14 @@ def getHtmlContent(link : str) -> str:
     return response.text
 
 def getImageExtension(image_line: str) -> str:
-    image = os.path.basename(image_line)
-    return image.split('.')[-1]
+    return mimetypes.guess_type(image_line)[0]
 
-def getImage(link : str) -> str:
+def getImage(link : str):
     print('getimage() link:', link)
-    response = requests.get(link)
     extension = getImageExtension(link)
-    print('getimage() suffix:', extension)
+    if extesion is not None:
+        response = requests.get(link)
+        print('getimage() suffix:', extension)
 
     image_file = tempfile.mkstemp(suffix='.' + extension)
     with open(image_file[1], "wb") as f:
@@ -334,6 +335,38 @@ class NewsBot:
         line = re.sub("í|ï", "i", line)
         line = re.sub("ç", "c", line)
         return line
+    
+    def publishPicture(self, image_link, url, token):
+        image_type = getImageExtension(image_link)
+        if image_type is not None:
+            return None
+        print('image:', image_link)
+        image_path = getImage(image_link)
+        print('image_path:', image_path)
+        with open(image_path, "rb") as f:
+            image_data = f.read()
+        image_filename = os.path.basename(image_path)
+
+        print('image_filename:', image_filename)
+        print('image_type:', image_type)
+
+        media_headers = {
+            "Authorization": "Bearer " + token,
+            "Content-Disposition": "attachment; filename={}".format(image_filename),
+            "Cache-control" : "no-cache",
+            "Content-type" : image_type
+            }
+
+        media_response = requests.post(url + "/wp-json/wp/v2/media", headers=media_headers, data=image_data)
+        print('media_response:', media_response.text)
+        media_id = None
+        if media_response.status_code == 200 or media_response.status_code == 201:
+            media_id = media_response.json()["id"]
+        print('removing image:', image_path)
+        os.unlink(image_path)
+        return media_id
+
+
 
     def publishWordPress(self):
 
@@ -368,38 +401,11 @@ class NewsBot:
             }
 
             if art['image'] is not None:
-                import re
-                if not re.search('^http', art['image']):
-                    link = art['link']
-                    if link[-1]  == '/':
-                        link = link[:-1]
-                    art['image'] = '/'.join([ link, art['image'] ])
-                print('image:', art['image'])
-                image_path = getImage(art['image'])
-                print('image_path:', image_path)
-                with open(image_path, "rb") as f:
-                    image_data = f.read()
-                image_type = getImageExtension(image_path)
-                image_filename = os.path.basename(image_path)
-
-                print('image_filename:', image_filename)
-                print('image_type:', image_type)
-
-                media_headers = {
-                    "Authorization": "Bearer " + token,
-                    "Content-Disposition": "attachment; filename={}".format(image_filename),
-                    "Cache-control" : "no-cache",
-                    "Content-type" : "image/" + image_type
-                }
-
-                media_response = requests.post(url + "/wp-json/wp/v2/media", headers=media_headers, data=image_data)
-
-                print('media_response:', media_response.text)
-                if media_response.status_code == 200 or media_response.status_code == 201:
-                    media_id = media_response.json()["id"]
+                image_type = getImageExtension(art['image'])
+                if image_type is not None:
+                    media_id = self.publishPicture(art['image'], url, token)
+                if  media_id is not None:
                     data["featured_media"] = media_id
-                print('removing image:', image_path)
-                os.unlink(image_path)
 
             resp = requests.post(
                 f"{url}/wp-json/wp/v2/posts",
