@@ -16,6 +16,7 @@ import base64
 import re
 import time
 import mimetypes
+import logging
 
 HACKERNEWS_FEED = "https://hnrss.org/newest"
 
@@ -155,6 +156,16 @@ INTERESTED_TERMS = [
     "limactl"
     ]
 
+logging.basicConfig()
+logging.root.setLevel(logging.INFO)
+logging.basicConfig(level=logging.INFO)
+
+scriptName = os.path.basename(__file__)
+
+logger = logging.getLogger(scriptName)
+logger.setLevel('DEBUG')
+
+
 def getHtmlContent(link : str) -> str:
     response = requests.get(link)
     html_content = response.text
@@ -164,11 +175,11 @@ def getImageExtension(image_line: str) -> str:
     return mimetypes.guess_type(image_line)[0]
 
 def getImage(link : str):
-    print('getimage() link:', link)
+    logger.debug('getimage() link:', link)
     extension = getImageExtension(link)
     if extesion is not None:
         response = requests.get(link)
-        print('getimage() suffix:', extension)
+        logger.debug('getimage() suffix:', extension)
 
     image_file = tempfile.mkstemp(suffix='.' + extension)
     with open(image_file[1], "wb") as f:
@@ -191,10 +202,14 @@ class NewsBot:
         parse = argparse.ArgumentParser(
             description='Automated Bot to Post into Joomla4 sites')
         parse.add_argument('--config', help="configuration file")
+        parse.add_argument('--loglevel', help="logging level", default="DEBUG")
 
         args = parse.parse_args()
         if args.config is None:
             raise Exception('Missing --config')
+
+        if args.loglevel is not None:
+            logger.setLevel(args.loglevel.upper())
 
         self.configFile = args.config
 
@@ -234,7 +249,7 @@ class NewsBot:
         for word in INTERESTED_TERMS:
             if re.search(word.lower(), text.lower()):
                 score += 1
-        print('Score:', score)
+        logger.debug('Score:', score)
         if score == 0:
             return False
         return True
@@ -247,7 +262,7 @@ class NewsBot:
         articles = list()
         for n in self.articles:
             if not self.isTopicOfInterest(n['title']):
-                print('Not related to something we might like, so we skip:', n['title'])
+                logger.info('Not related to something we might like, so we skip: ' + n['title'])
                 continue
             try:
                 html_content = getHtmlContent(n['link'])
@@ -262,7 +277,7 @@ class NewsBot:
             try:
                 sentences = sent_tokenize(article_text)
             except LookupError:
-                print("initializing nltk")
+                logger.info("initializing nltk")
                 nltk.download('punkt')
                 nltk.download('stopwords')
 
@@ -301,14 +316,14 @@ class NewsBot:
                 except KeyError:
                     pass
 
-            print('translating:', n['title'])
+            logger.info('translating:', n['title'])
             try:
                 translated_summary = translator.translate(summary, src='en', dest='pt')
             except TypeError:
                 # failed to translate, try the next one
                 continue
             if len(translated_summary.text) < 5:
-                print(' * failed...')
+                logger.info(' * failed...')
                 continue
             translated_title = translator.translate(
                 n['title'], src='en', dest='pt')
@@ -340,15 +355,15 @@ class NewsBot:
         image_type = getImageExtension(image_link)
         if image_type is not None:
             return None
-        print('image:', image_link)
+        logger.debug('image:', image_link)
         image_path = getImage(image_link)
-        print('image_path:', image_path)
+        logger.debug('image_path:', image_path)
         with open(image_path, "rb") as f:
             image_data = f.read()
         image_filename = os.path.basename(image_path)
 
-        print('image_filename:', image_filename)
-        print('image_type:', image_type)
+        logger.debug('image_filename:', image_filename)
+        logger.debug('image_type:', image_type)
 
         media_headers = {
             "Authorization": "Bearer " + token,
@@ -358,11 +373,11 @@ class NewsBot:
             }
 
         media_response = requests.post(url + "/wp-json/wp/v2/media", headers=media_headers, data=image_data)
-        print('media_response:', media_response.text)
+        logger.debug('media_response:', media_response.text)
         media_id = None
         if media_response.status_code == 200 or media_response.status_code == 201:
             media_id = media_response.json()["id"]
-        print('removing image:', image_path)
+        logger.debug('removing image:', image_path)
         os.unlink(image_path)
         return media_id
 
@@ -387,7 +402,7 @@ class NewsBot:
 
             if art['title'] in published_titles:
                 # skip if already there
-                print('Article "' + art['title'] + '" already published')
+                logger.info('Article "' + art['title'] + '" already published')
                 continue
             data = {
                 "title": art['title'],
@@ -414,10 +429,10 @@ class NewsBot:
                 json=data, # internal auto do json.dumps
             )
             if resp.status_code == 200 or resp.status_code == 201:
-                print('Posted:', art['title'])
+                logger.info('Posted:', art['title'])
             else:
-                print('FAILED:', art['title'])
-            print(' * status code:', resp.status_code)
+                logger.error('FAILED:', art['title'])
+            logger.debug(' * status code:', resp.status_code)
             #print(' * resp text:', resp.text)
 
 
@@ -426,7 +441,7 @@ class NewsBot:
         prettyprint(self.articles)
 
         self.articles = self.getArticles()
-        prettyprint(self.articles)
+        #prettyprint(self.articles)
 
         self.publishWordPress()
 
