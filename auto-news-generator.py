@@ -451,6 +451,6 @@ class NewsBot:
 
 
 if __name__ == '__main__':
-    print(time.ctime())
+    logger.info('Starting at: ' + time.ctime())
     news = NewsBot()
     news.run()
