@@ -175,11 +175,11 @@ def getImageExtension(image_line: str) -> str:
     return mimetypes.guess_type(image_line)[0]
 
 def getImage(link : str):
-    logger.debug('getimage() link:', link)
+    logger.debug('getimage() link: ' + link)
     extension = getImageExtension(link)
     if extesion is not None:
         response = requests.get(link)
-        logger.debug('getimage() suffix:', extension)
+        logger.debug('getimage() suffix: ' + extension)
 
     image_file = tempfile.mkstemp(suffix='.' + extension)
     with open(image_file[1], "wb") as f:
@@ -249,7 +249,7 @@ class NewsBot:
         for word in INTERESTED_TERMS:
             if re.search(word.lower(), text.lower()):
                 score += 1
-        logger.debug('Score:', score)
+        logger.debug('Score: ' + str(score))
         if score == 0:
             return False
         return True
@@ -316,7 +316,7 @@ class NewsBot:
                 except KeyError:
                     pass
 
-            logger.info('translating:', n['title'])
+            logger.info('translating: ' + n['title'])
             try:
                 translated_summary = translator.translate(summary, src='en', dest='pt')
             except TypeError:
@@ -355,15 +355,15 @@ class NewsBot:
         image_type = getImageExtension(image_link)
         if image_type is not None:
             return None
-        logger.debug('image:', image_link)
+        logger.debug('image: ' + image_link)
         image_path = getImage(image_link)
-        logger.debug('image_path:', image_path)
+        logger.debug('image_path: ' + image_path)
         with open(image_path, "rb") as f:
             image_data = f.read()
         image_filename = os.path.basename(image_path)
 
-        logger.debug('image_filename:', image_filename)
-        logger.debug('image_type:', image_type)
+        logger.debug('image_filename: ' + image_filename)
+        logger.debug('image_type: ' + image_type)
 
         media_headers = {
             "Authorization": "Bearer " + token,
@@ -373,11 +373,11 @@ class NewsBot:
             }
 
         media_response = requests.post(url + "/wp-json/wp/v2/media", headers=media_headers, data=image_data)
-        logger.debug('media_response:', media_response.text)
+        logger.debug('media_response: ' + media_response.text)
         media_id = None
         if media_response.status_code == 200 or media_response.status_code == 201:
             media_id = media_response.json()["id"]
-        logger.debug('removing image:', image_path)
+        logger.debug('removing image: ' + image_path)
         os.unlink(image_path)
         return media_id
 
@@ -429,10 +429,10 @@ class NewsBot:
                 json=data, # internal auto do json.dumps
             )
             if resp.status_code == 200 or resp.status_code == 201:
-                logger.info('Posted:', art['title'])
+                logger.info('Posted: ' + art['title'])
             else:
-                logger.error('FAILED:', art['title'])
-            logger.debug(' * status code:', resp.status_code)
+                logger.error('FAILED: ' + art['title'])
+            logger.debug(' * status code: ' + str(resp.status_code))
             #print(' * resp text:', resp.text)
 
 
