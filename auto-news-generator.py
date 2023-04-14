@@ -423,8 +423,8 @@ class NewsBot:
                 image_type = getImageExtension(art['image'])
                 if image_type is not None:
                     media_id = self.publishPicture(art['image'], url, token)
-                if  media_id is not None:
-                    data["featured_media"] = media_id
+                    if  media_id is not None:
+                        data["featured_media"] = media_id
 
             resp = requests.post(
                 f"{url}/wp-json/wp/v2/posts",
