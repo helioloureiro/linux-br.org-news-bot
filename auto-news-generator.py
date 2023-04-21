@@ -157,7 +157,11 @@ INTERESTED_TERMS = [
     "CSS",
     "supervisioned learning",
     "HTML",
-    "CLI"
+    "CLI",
+    "FOSDEM",
+    "FISL",
+    "LatinoWare",
+    "PyCon"
     ]
 
 logging.basicConfig()
@@ -314,11 +318,15 @@ class NewsBot:
 
             img_tags = soup.find_all('img')
             img_url = None
-            if img_tags:
-                try:
-                    img_url = img_tags[0]['src']
-                except KeyError:
-                    pass
+            
+            try:
+                img_url = img_tags[0]['src']
+            except KeyError:
+                tags_size = 0
+                if img_tags is not None:
+                    tags_size = len(img_tags)
+                logger.info(f"Failed to find image for: {summary} - tags found: {tags_size}")
+                pass
 
             logger.info('translating: ' + n['title'])
             try:
