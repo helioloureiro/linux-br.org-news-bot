@@ -17,13 +17,16 @@ import re
 import time
 import mimetypes
 import logging
+import sys
 
 HACKERNEWS_FEED = "https://hnrss.org/newest"
 
 translator = Translator(service_urls=['translate.google.com'])
 
+program_path = os.path.dirname(__file__)
+
 INTERESTED_TERMS = [ ]
-INTERESTED_TERMS_FILE = "interests.list"
+INTERESTED_TERMS_FILE = f"{program_path}/interests.list"
 
 logging.basicConfig()
 logging.root.setLevel(logging.INFO)
