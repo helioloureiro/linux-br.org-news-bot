@@ -204,7 +204,7 @@ class NewsBot:
         import argparse
 
         parse = argparse.ArgumentParser(
-            description='Automated Bot to Post into Joomla4 sites')
+            description='Automated Bot to Post into WordPress sites')
         parse.add_argument('--config', help="configuration file")
         parse.add_argument('--loglevel', help="logging level", default="DEBUG")
 
@@ -381,6 +381,8 @@ class NewsBot:
         media_id = None
         if media_response.status_code == 200 or media_response.status_code == 201:
             media_id = media_response.json()["id"]
+        else:
+            logger.warn(f"Failed to post picture: {image_link}, path: {image_path}, status_code: {media_response.status_code}")
         logger.debug('removing image: ' + image_path)
         os.unlink(image_path)
         return media_id
