@@ -6,18 +6,18 @@ import requests
 import json
 
 def readConfig(configFile):
-    cfg = configparser.ConfigParser()
-    cfg.read(configFile)
-    return cfg
+    config = configparser.ConfigParser()
+    config.read(configFile)
+    return config
 
 def getSiteFromConfig(cfgObj):
     return cfgObj.get('WORDPRESS', 'SITE')
 
 def updateTokenConfig(token, configFile):
-    cfg = readConfig(configFile)
-    with open(configFile, 'w') as cFD:
-        cfg.set('WORDPRESS', 'TOKEN', token)
-        cfg.write(cFD)
+    config = readConfig(configFile)
+    config.set('WORDPRESS', 'TOKEN', token)
+    with open(configFile, 'w') as updated_config_file:
+        config.write(updated_config_file)
     print('Token updated at configuration file')
 
 def main():
@@ -53,7 +53,7 @@ def main():
         return
     jwt_token = jwt_response.json()["data"]["token"]
     print(jwt_token)
-    updateTokenConfig(jwt_token, cfg)
+    updateTokenConfig(jwt_token, args.config)
 
 
 
