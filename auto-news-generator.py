@@ -215,14 +215,13 @@ class NewsBot:
                 continue
             translated_title = translator.translate(
                 n['title'], src='en', dest='pt')
-            translated_title =  applyTextCorrections(translated_title)
 
             content = applyTextCorrections(translated_summary.text)
             content += "\n\nFonte: <a href=\"" + n['link']
             content += "\">" + n['link'] + "</a>"
  
             articles.append({
-                'title': translated_title.text,
+                'title': applyTextCorrections(translated_title.text),
                 'content': content,
                 'link': n['link'],
                 'image': img_url
