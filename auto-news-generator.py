@@ -146,8 +146,9 @@ class NewsBot:
         articles = list()
         for n in self.articles:
             if not self.isTopicOfInterest(n['title']):
-                logger.info('Not related to something we might like, so we skip: ' + n['title'])
+                logger.info('Not related to something we might like, so we skip: %s', n['title'])
                 continue
+            logger.info('Interested article: %s', n['title'])
             try:
                 html_content = getHtmlContent(n['link'])
             except:
