@@ -1,23 +1,21 @@
 #! /usr/bin/env python3
 
-import feedparser
-import requests
-from bs4 import BeautifulSoup
+import tempfile
+import json
+import os
+import re
+import logging
+import time
+import mimetypes
+from heapq import nlargest
 from nltk.tokenize import sent_tokenize
 from nltk.corpus import stopwords
 from nltk.probability import FreqDist
 import nltk
-from heapq import nlargest
-import tempfile
-import json
 from googletrans import Translator
-import os
-import base64
-import re
-import time
-import mimetypes
-import logging
-import sys
+import requests
+import feedparser
+from bs4 import BeautifulSoup
 
 HACKERNEWS_FEED = "https://hnrss.org/newest"
 
@@ -278,13 +276,16 @@ class NewsBot:
 
 
     def publishWordPress(self):
+        '''
+        Publish articles into WordPress website.
+        '''
 
         # reference: https://github.com/crifan/crifanLibPython/blob/master/python3/crifanLib/thirdParty/crifanWordpress.py
 
         url = self.wordpress['site']
         token = self.wordpress['token']
 
-        curHeaders = {
+        cur_headers = {
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json",
             "Accept": "application/json",
@@ -296,7 +297,7 @@ class NewsBot:
 
             if art['title'] in published_titles:
                 # skip if already there
-                logger.info('Article "' + art['title'] + '" already published')
+                logger.info('Article "%s" already published', art['title'])
                 continue
             data = {
                 "title": art['title'],
@@ -318,19 +319,23 @@ class NewsBot:
 
             resp = requests.post(
                 f"{url}/wp-json/wp/v2/posts",
-                headers=curHeaders,
+                headers=cur_headers,
                 # data=json.dumps(postDict),
                 json=data, # internal auto do json.dumps
+                timeout=30,
             )
-            if resp.status_code == 200 or resp.status_code == 201:
-                logger.info('Posted: ' + art['title'])
+            if resp.status_code in (200, 201):
+                logger.info('Posted: %s', art['title'])
             else:
-                logger.error('FAILED: ' + art['title'])
-            logger.debug(' * status code: ' + str(resp.status_code))
+                logger.error('FAILED: %s', art['title'])
+            logger.debug(' * status code: %s', str(resp.status_code))
             #print(' * resp text:', resp.text)
 
 
     def run(self):
+        '''
+        Simple bot starting point.
+        '''
         self.getHackerNews()
         #prettyprint(self.articles)
 
@@ -341,6 +346,6 @@ class NewsBot:
 
 
 if __name__ == '__main__':
-    logger.info('Starting at: ' + time.ctime())
+    logger.info('Starting at: %s', time.ctime())
     news = NewsBot()
     news.run()
