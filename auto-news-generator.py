@@ -243,8 +243,8 @@ class NewsBot:
     
     def publishPicture(self, image_link, url, token):
         image_type = getImageExtension(image_link)
-        if image_type is not None:
-            logger.debug(f"publishPicture() got image_type as none for: {image_type}")
+        if image_type is  None:
+            logger.debug(f"publishPicture() got image_type as none for: {image_link}")
             return None
         logger.debug('image: ' + image_link)
         image_path = getImage(image_link)
