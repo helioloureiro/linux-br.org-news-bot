@@ -4,6 +4,7 @@ import argparse
 import configparser
 import requests
 import json
+import sys
 
 def readConfig(configFile):
     config = configparser.ConfigParser()
@@ -50,7 +51,7 @@ def main():
     if jwt_response.status_code != 200:
         print('status code:', jwt_response.status_code)
         print('Error: ', jwt_response.text)
-        return
+        sys.exit(1)
     jwt_token = jwt_response.json()["data"]["token"]
     print(jwt_token)
     updateTokenConfig(jwt_token, args.config)
