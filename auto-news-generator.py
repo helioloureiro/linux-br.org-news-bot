@@ -28,6 +28,10 @@ program_path = os.path.dirname(__file__)
 INTERESTED_TERMS = [ ]
 INTERESTED_TERMS_FILE = f"{program_path}/interests.list"
 
+CORRECTIONS = { 
+    "ferrugem" : "rust"
+}
+
 logging.basicConfig()
 logging.root.setLevel(logging.INFO)
 logging.basicConfig(level=logging.INFO)
@@ -69,6 +73,12 @@ def prettyprint(data):
             prettyprint(e)
     else:
         print(data)
+
+def applyTextCorrections(text):
+    for term, replacement in CORRECTIONS.items():
+        if re.search(term, text):
+            text = re.sub(term, replacement, tex)
+    return text
 
 class NewsBot:
     def __init__(self):
@@ -180,6 +190,7 @@ class NewsBot:
             summary = " ".join(summary_sentences)
 
             if len(summary) < 5:
+                logger.debug(f"Too short summary for: {summary}")
                 # summary too short, so skip to the next
                 continue
 
@@ -192,7 +203,7 @@ class NewsBot:
                 tags_size = 0
                 if img_tags is not None:
                     tags_size = len(img_tags)
-                logger.info(f"Failed to find image for: {summary} - tags found: {tags_size}")
+                logger.debug(f"Failed to find image for: {summary} - tags found: {tags_size}")
                 pass
 
             logger.info('translating: ' + n['title'])
@@ -206,8 +217,9 @@ class NewsBot:
                 continue
             translated_title = translator.translate(
                 n['title'], src='en', dest='pt')
+            translated_title =  applyTextCorrections(translated_title)
 
-            content = translated_summary.text 
+            content = applyTextCorrections(translated_summary.text)
             content += "\n\nFonte: <a href=\"" + n['link']
             content += "\">" + n['link'] + "</a>"
  
@@ -233,6 +245,7 @@ class NewsBot:
     def publishPicture(self, image_link, url, token):
         image_type = getImageExtension(image_link)
         if image_type is not None:
+            logger.debug(f"publishPicture() got image_type as none for: {image_type}"
             return None
         logger.debug('image: ' + image_link)
         image_path = getImage(image_link)
