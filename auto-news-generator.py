@@ -27,7 +27,8 @@ INTERESTED_TERMS = [ ]
 INTERESTED_TERMS_FILE = f"{program_path}/interests.list"
 
 CORRECTIONS = { 
-    "ferrugem" : "rust"
+    "ferrugem" : "rust",
+    "concha" : "shell"
 }
 
 logging.basicConfig()
