@@ -37,6 +37,7 @@ Gnome
 Golang
 HTML
 Haskell
+Intel
 JPEG
 JSON
 JWT
@@ -100,13 +101,16 @@ amazon
 android
 arduino
 bitcoin
+blockchain
 co-pilot
 container
 crypto
 curl
+datacenter
 debug
 docker
 facebook
+file storage
 free software
 google
 helm
