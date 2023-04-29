@@ -142,19 +142,19 @@ class NewsBot:
             return False
         return True
 
-    def getArticles(self) -> list:
+    def getArticles(self) -> list: #pylint: disable=C0103
         '''
         Open each news from the list, fetch the data and try to generate a summary.
         If succeed, then add to the list.
         '''
         articles = list()
-        for n in self.articles:
-            if not self.isTopicOfInterest(n['title']):
-                logger.info('Not related to something we might like, so we skip: %s', n['title'])
+        for article in self.articles:
+            if not self.isTopicOfInterest(article['title']):
+                logger.info('Not related to something we might like, so we skip: %s', article['title'])
                 continue
-            logger.info('Interested article: %s', n['title'])
+            logger.info('Interested article: %s', article['title'])
             try:
-                html_content = getHtmlContent(n['link'])
+                html_content = getHtmlContent(article['link'])
             except:
                 continue
             soup = BeautifulSoup(html_content, "html.parser")
@@ -194,7 +194,7 @@ class NewsBot:
             summary = " ".join(summary_sentences)
 
             if len(summary) < 5:
-                logger.debug(f"Too short summary for: {summary}")
+                logger.debug("Too short summary for: %s", summary)
                 # summary too short, so skip to the next
                 continue
 
@@ -207,10 +207,9 @@ class NewsBot:
                 tags_size = 0
                 if img_tags is not None:
                     tags_size = len(img_tags)
-                logger.debug(f"Failed to find image for: {summary} - tags found: {tags_size}")
-                pass
+                logger.debug("Failed to find image for: %s - tags found: %d", summary, tags_size)
 
-            logger.info('translating: ' + n['title'])
+            logger.info('translating: %s', article['title'])
             try:
                 translated_summary = translator.translate(summary, src='en', dest='pt')
             except TypeError:
@@ -220,35 +219,40 @@ class NewsBot:
                 logger.info(' * failed...')
                 continue
             translated_title = translator.translate(
-                n['title'], src='en', dest='pt')
+                article['title'], src='en', dest='pt')
 
             content = applyTextCorrections(translated_summary.text)
-            content += "\n\nFonte: <a href=\"" + n['link']
-            content += "\">" + n['link'] + "</a>"
+            content += "\n\nFonte: <a href=\"" + article['link']
+            content += "\">" + article['link'] + "</a>"
 
             articles.append({
                 'title': applyTextCorrections(translated_title.text),
                 'content': content,
-                'link': n['link'],
+                'link': article['link'],
                 'image': img_url
             })
         return articles
 
-    def generateAlias(self, line : str) -> str:
-        import re
+    def generateAlias(self, line : str) -> str: #pylint: disable=C0103
+        '''
+        It removes characters with accent in order to create a nice
+        site alias on WordPress in lower case.
+        '''
+        new_line = line.lower()
+        new_line = re.sub(" ", "-", new_line)
+        new_line = re.sub("á|ã|å", "a", new_line)
+        new_line = re.sub("ó|õ|ö", "o", new_line)
+        new_line = re.sub("í|ï", "i", new_line)
+        new_line = re.sub("ç", "c", new_line)
+        return new_line
 
-        line = line.lower()
-        line = re.sub(" ", "-", line)
-        line = re.sub("á|ã|å", "a", line)
-        line = re.sub("ó|õ|ö", "o", line)
-        line = re.sub("í|ï", "i", line)
-        line = re.sub("ç", "c", line)
-        return line
-
-    def publishPicture(self, image_link, url, token):
+    def publishPicture(self, image_link, url, token): #pylint: disable=C0103
+        '''
+        Publish the picture into WordPress site.
+        '''
         image_type = getImageExtension(image_link)
         if image_type is None:
-            logger.debug(f"publishPicture() got image_type as none for: {image_link}")
+            logger.debug("publishPicture() got image_type as none for: %s", image_link)
             return None
         logger.debug('image: %s', image_link)
         image_path = getImage(image_link)
@@ -279,7 +283,8 @@ class NewsBot:
         if media_response.status_code in (200, 201):
             media_id = media_response.json()["id"]
         else:
-            logger.warning("Failed to post picture: %s, path: %s, status_code: %d",
+            logger.warning("Failed to post picture: " +  #pylint: disable=W1201
+                           "%s, path: %s, status_code: %d",
                 (image_link, image_path, media_response.status_code)
             )
         logger.debug('removing image: %s', image_path)
