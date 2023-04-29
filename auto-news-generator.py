@@ -55,9 +55,11 @@ def getImageExtension(image_line: str) -> str:
 def getImage(link : str):
     logger.debug('getimage() link: ' + link)
     extension = getImageExtension(link)
-    if extesion is not None:
-        response = requests.get(link)
-        logger.debug('getimage() suffix: ' + extension)
+    if extension is None:
+        logger.debug('getImage(): %s is None', link)
+        return None
+    response = requests.get(link)
+    logger.debug('getimage() suffix: %s', extension)
 
     image_file = tempfile.mkstemp(suffix='.' + extension)
     with open(image_file[1], "wb") as f:
@@ -243,7 +245,7 @@ class NewsBot:
     
     def publishPicture(self, image_link, url, token):
         image_type = getImageExtension(image_link)
-        if image_type is  None:
+        if image_type is None:
             logger.debug(f"publishPicture() got image_type as none for: {image_link}")
             return None
         logger.debug('image: ' + image_link)
