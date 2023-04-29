@@ -26,7 +26,7 @@ program_path = os.path.dirname(__file__)
 INTERESTED_TERMS = [ ]
 INTERESTED_TERMS_FILE = f"{program_path}/interests.list"
 
-CORRECTIONS = { 
+CORRECTIONS = {
     "ferrugem" : "rust",
     "concha" : "shell"
 }
@@ -200,7 +200,7 @@ class NewsBot:
 
             img_tags = soup.find_all('img')
             img_url = None
-            
+
             try:
                 img_url = img_tags[0]['src']
             except KeyError:
@@ -225,7 +225,7 @@ class NewsBot:
             content = applyTextCorrections(translated_summary.text)
             content += "\n\nFonte: <a href=\"" + n['link']
             content += "\">" + n['link'] + "</a>"
- 
+
             articles.append({
                 'title': applyTextCorrections(translated_title.text),
                 'content': content,
@@ -244,49 +244,56 @@ class NewsBot:
         line = re.sub("í|ï", "i", line)
         line = re.sub("ç", "c", line)
         return line
-    
+
     def publishPicture(self, image_link, url, token):
         image_type = getImageExtension(image_link)
         if image_type is None:
             logger.debug(f"publishPicture() got image_type as none for: {image_link}")
             return None
-        logger.debug('image: ' + image_link)
+        logger.debug('image: %s', image_link)
         image_path = getImage(image_link)
-        logger.debug('image_path: ' + image_path)
-        with open(image_path, "rb") as f:
-            image_data = f.read()
+        logger.debug('image_path: %s', image_path)
+        with open(image_path, "rb") as img:
+            image_data = img.read()
         image_filename = os.path.basename(image_path)
 
-        logger.debug('image_filename: ' + image_filename)
-        logger.debug('image_type: ' + image_type)
+        logger.debug('image_filename: %s', image_filename)
+        logger.debug('image_type: %s', image_type)
 
         media_headers = {
             "Authorization": "Bearer " + token,
-            "Content-Disposition": "attachment; filename={}".format(image_filename),
+            "Content-Disposition": f"attachment; filename={image_filename}",
             "Cache-control" : "no-cache",
             "Content-type" : image_type
             }
 
-        media_response = requests.post(url + "/wp-json/wp/v2/media", headers=media_headers, data=image_data)
+        media_response = requests.post(
+            url + "/wp-json/wp/v2/media",
+            headers=media_headers,
+            data=image_data,
+            timeout=30
+        )
         # too much data
         #logger.debug('media_response: ' + media_response.text)
         media_id = None
-        if media_response.status_code == 200 or media_response.status_code == 201:
+        if media_response.status_code in (200, 201):
             media_id = media_response.json()["id"]
         else:
-            logger.warn(f"Failed to post picture: {image_link}, path: {image_path}, status_code: {media_response.status_code}")
-        logger.debug('removing image: ' + image_path)
+            logger.warning("Failed to post picture: %s, path: %s, status_code: %d",
+                (image_link, image_path, media_response.status_code)
+            )
+        logger.debug('removing image: %s', image_path)
         os.unlink(image_path)
         return media_id
 
 
 
-    def publishWordPress(self):
+    def publishWordPress(self): #pylint: disable=C0103
         '''
         Publish articles into WordPress website.
         '''
 
-        # reference: https://github.com/crifan/crifanLibPython/blob/master/python3/crifanLib/thirdParty/crifanWordpress.py
+        # reference: https://github.com/crifan/crifanLibPython/blob/master/python3/crifanLib/thirdParty/crifanWordpress.py #pylint: disable=C0301
 
         url = self.wordpress['site']
         token = self.wordpress['token']
