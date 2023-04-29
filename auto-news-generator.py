@@ -60,7 +60,7 @@ def getImage(link : str):
         return None
     response = requests.get(link)
 
-    save_extension = extension.split("/").[1]
+    save_extension = extension.split("/")[1]
     logger.debug('getimage() suffix: %s', save_extension)
 
     image_file = tempfile.mkstemp(suffix='.' + save_extension)
