@@ -59,9 +59,11 @@ def getImage(link : str):
         logger.debug('getImage(): %s is None', link)
         return None
     response = requests.get(link)
-    logger.debug('getimage() suffix: %s', extension)
 
-    image_file = tempfile.mkstemp(suffix='.' + extension)
+    save_extension = extension.split("/").[1]
+    logger.debug('getimage() suffix: %s', save_extension)
+
+    image_file = tempfile.mkstemp(suffix='.' + save_extension)
     with open(image_file[1], "wb") as f:
         f.write(response.content)
     return image_file[1]
