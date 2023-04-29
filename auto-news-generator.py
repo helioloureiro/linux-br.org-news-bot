@@ -268,7 +268,8 @@ class NewsBot:
             }
 
         media_response = requests.post(url + "/wp-json/wp/v2/media", headers=media_headers, data=image_data)
-        logger.debug('media_response: ' + media_response.text)
+        # too much data
+        #logger.debug('media_response: ' + media_response.text)
         media_id = None
         if media_response.status_code == 200 or media_response.status_code == 201:
             media_id = media_response.json()["id"]
