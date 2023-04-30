@@ -57,6 +57,7 @@ Mint
 MySQL
 NVIDIA
 NetBSD
+NixOS
 OCaml
 OSI
 OpenBSD
@@ -86,6 +87,7 @@ Solaris
 Sun
 Suse
 TCL
+Termux
 Turing
 Twitter
 Ubuntu
@@ -143,3 +145,4 @@ software libre
 sqlite3
 supervisioned learning
 vector
+yakuake
