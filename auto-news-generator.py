@@ -80,7 +80,7 @@ def prettyprint(data):
 def applyTextCorrections(text):
     for term, replacement in CORRECTIONS.items():
         if re.search(term, text):
-            text = re.sub(term, replacement, tex)
+            text = re.sub(term, replacement, text)
     return text
 
 class NewsBot:
@@ -203,7 +203,7 @@ class NewsBot:
 
             try:
                 img_url = img_tags[0]['src']
-            except KeyError:
+            except (KeyError, IndexError):
                 tags_size = 0
                 if img_tags is not None:
                     tags_size = len(img_tags)
