@@ -50,7 +50,10 @@ def getHtmlContent(link : str) -> str:
     return response.text
 
 def getImageExtension(image_line: str) -> str:
-    return mimetypes.guess_type(image_line)[0]
+    imgType =  mimetypes.guess_type(image_line)[0]
+    if imgType == "svg+xml":
+        imgType = "svg"
+    return imgType
 
 def getImage(link : str):
     logger.debug('getimage() link: ' + link)
