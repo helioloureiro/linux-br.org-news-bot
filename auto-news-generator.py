@@ -137,12 +137,17 @@ class NewsBot:
 
     def isTopicOfInterest(self, text : str) -> bool:
         score = 0
+        words_of_interest = []
         for word in INTERESTED_TERMS:
             if re.search(word.lower(), text.lower()):
                 score += 1
+                words_of_interest.append(word)
         logger.debug(f'"{text}" [SCORE: {score}]')
+        
         if score == 0:
             return False
+        all_words = ', '.join(words_of_interest)
+        logger.info(f"Ranking: [{all_words}] {score}")
         return True
 
     def getArticles(self) -> list: #pylint: disable=C0103
