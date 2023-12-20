@@ -11,6 +11,8 @@ import feedparser
 import re
 import sqlite3
 
+sys.dont_write_bytecode = True
+
 HOME = os.getenv('HOME')
 CONFIG = f"{HOME}/.config/toot/config.json"
 

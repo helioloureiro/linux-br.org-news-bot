@@ -6,6 +6,8 @@ import requests
 import json
 import sys
 
+sys.dont_write_bytecode = True
+
 def readConfig(configFile):
     config = configparser.ConfigParser()
     config.read(configFile)

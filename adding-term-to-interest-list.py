@@ -2,6 +2,7 @@
 import re
 import sys
 
+sys.dont_write_bytecode = True
 INTERESTS_LIST_FILE = "interests.list"
 
 new_term = input('Enter the new term: ')
