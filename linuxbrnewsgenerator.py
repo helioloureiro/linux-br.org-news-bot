@@ -132,7 +132,13 @@ class NewsBot:
         words_of_interest = []
         for word in INTERESTED_TERMS:
             # [ \.,]open source[ \.,]|$
-            if re.search("[ \.,]" + word.lower() + "[ \.,]|$", text.lower()):
+            if re.search("[ \.,]" + word.lower() + "[ \.,]", text.lower()):
+                score += 1
+                words_of_interest.append(word)
+            elif re.search("[ \.,]" + word.lower() + "$", text.lower()):
+                score += 1
+                words_of_interest.append(word)
+            elif re.search("^" + word.lower() + "[ \.,]", text.lower()):
                 score += 1
                 words_of_interest.append(word)
         logger.debug(f'"{text}" [SCORE: {score}]')
