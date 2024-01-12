@@ -207,64 +207,6 @@ class NewsBot:
         os.unlink(image_path)
         return media_id
 
-
-
-    def publishWordPress(self): #pylint: disable=C0103
-        '''
-        Publish articles into WordPress website.
-        '''
-
-        # reference: https://github.com/crifan/crifanLibPython/blob/master/python3/crifanLib/thirdParty/crifanWordpress.py #pylint: disable=C0301
-
-        url = self.wordpress['site']
-        token = self.wordpress['token']
-
-        cur_headers = {
-            "Authorization": f"Bearer {token}",
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-        }
-
-        published_titles = self.getSiteRSSTitles()
-
-        for art in self.articles:
-
-            if art['title'] in published_titles:
-                # skip if already there
-                logger.info('Article "%s" already published', art['title'])
-                continue
-            data = {
-                "title": art['title'],
-                "content": art['content'],
-                "date": None, # '2020-08-17T10:16:34'
-                "slug": self.generateAlias(art['title']),
-                "status": "publish",
-                "format": 'standard',
-                "categories": [91], # 91 : notícias
-                "tags": [],
-            }
-
-            if art['image'] is not None:
-                image_type = getImageExtension(art['image'])
-                if image_type is not None:
-                    media_id = self.publishPicture(art['image'], url, token)
-                    if  media_id is not None:
-                        data["featured_media"] = media_id
-
-            resp = requests.post(
-                f"{url}/wp-json/wp/v2/posts",
-                headers=cur_headers,
-                # data=json.dumps(postDict),
-                json=data, # internal auto do json.dumps
-                timeout=30,
-            )
-            if resp.status_code in (200, 201):
-                logger.info('Posted: %s', art['title'])
-            else:
-                logger.error('FAILED: %s', art['title'])
-            logger.debug(' * status code: %s', str(resp.status_code))
-            #print(' * resp text:', resp.text)
-
     def run(self):
         '''
         Simple bot starting point.
@@ -321,7 +263,7 @@ class NewsBot:
             logger.info('translating: %s', title)
             translated_summary = self.translate_article(summary)
 
-            if len(translated_summary) < 5:
+            if translated_summary is None or len(translated_summary) < 5:
                 logger.error('failed to translate [%s]', title)
                 continue
 
@@ -426,6 +368,80 @@ class NewsBot:
         return applyTextCorrections(summary) + \
             "\n\nFonte: <a href=\"" + link + \
             "\">" + link + "</a>"
+
+    def publishWordPress(self): #pylint: disable=C0103
+        '''
+        Publish articles into WordPress website.
+        '''
+
+        # reference: https://github.com/crifan/crifanLibPython/blob/master/python3/crifanLib/thirdParty/crifanWordpress.py #pylint: disable=C0301
+
+        url = self.wordpress['site']
+        token = self.wordpress['token']
+
+        cur_headers = self.generate_http_headers(token)
+
+        published_titles = self.getSiteRSSTitles()
+
+        for art in self.articles:
+            if art['image'] is None:
+                logger.info("article [%s] missing image", art['title'])
+                continue
+
+            if self.is_article_already_published(art, published_titles):
+                continue
+
+            data = {
+                "title": art['title'],
+                "content": art['content'],
+                "date": None, # '2020-08-17T10:16:34'
+                "slug": self.generateAlias(art['title']),
+                "status": "publish",
+                "format": 'standard',
+                "categories": [91], # 91 : notícias
+                "tags": [],
+            }
+
+            image_type = getImageExtension(art['image'])
+            if image_type is None:
+                logger.info("Failed to detect image extension [%s] (not published for this reason)", art['title'])
+                continue
+
+            media_id = self.publishPicture(art['image'], url, token)
+            if  media_id is None:
+                logger.info("Failed to fetch image for [%s] (not published for this reason)", art['title'])
+                continue
+            data["featured_media"] = media_id
+
+            resp = requests.post(
+                f"{url}/wp-json/wp/v2/posts",
+                headers=cur_headers,
+                # data=json.dumps(postDict),
+                json=data, # internal auto do json.dumps
+                timeout=30,
+            )
+            if resp.status_code in (200, 201):
+                logger.info('Posted: %s', art['title'])
+            else:
+                logger.error('FAILED: %s', art['title'])
+            logger.debug(' * status code: %s', str(resp.status_code))
+            #print(' * resp text:', resp.text)
+
+    def generate_http_headers(self, token: str) -> str:
+        'self explained method'
+        return {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        }
+
+    def is_article_already_published(self, article_dict: dict, published_titles: list) -> bool:
+        'self explained method'
+        title = article_dict['title']
+        if title in published_titles:
+            logger.info('Article [%s] already published', title)
+            return True
+        return False
 
 
 if __name__ == '__main__':
