@@ -171,7 +171,12 @@ class NewsBot:
             logger.debug("publishPicture() got image_type as none for: %s", image_link)
             return None
         logger.debug('image: %s', image_link)
-        image_path = getImage(image_link)
+        try:
+
+            image_path = getImage(image_link)
+        except requests.exceptions.InvalidSchema:
+            logger.error("detected invalid schema for image url: %s", image_link)
+            return None
         logger.debug('image_path: %s', image_path)
         with open(image_path, "rb") as img:
             image_data = img.read()
@@ -199,7 +204,7 @@ class NewsBot:
         if media_response.status_code in (200, 201):
             media_id = media_response.json()["id"]
         else:
-            logger.warning("Failed to post picture: " +  #pylint: disable=W1201
+            logger.error("Failed to post picture: " +  #pylint: disable=W1201
                            "%s, path: %s, status_code: %d",
                 image_link, image_path, media_response.status_code
             )
