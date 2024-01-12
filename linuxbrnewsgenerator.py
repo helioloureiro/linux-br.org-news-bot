@@ -321,7 +321,7 @@ class NewsBot:
             logger.info('translating: %s', title)
             translated_summary = self.translate_article(summary)
 
-            if len(translated_summary.text) < 5:
+            if len(translated_summary) < 5:
                 logger.error('failed to translate [%s]', title)
                 continue
 
