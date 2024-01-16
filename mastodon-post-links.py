@@ -51,7 +51,9 @@ class TootPostLink:
         articles = feedparser.parse(RSS_SITE)
         self.articles = []
         print('selecting articles...')
-        print('posted_articles:', self.posted_articles)
+        print('posted_articles:')
+        for art in self.posted_articles:
+            print(" *", art)
         for rss in articles.entries:
             #rss = articles.entries[index]
             if rss.link in self.posted_articles:
